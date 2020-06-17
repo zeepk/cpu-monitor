@@ -1,7 +1,6 @@
 const { app, BrowserWindow, Menu } = require('electron')
 const log = require('electron-log')
 const os = require('os')
-const osu = require('node-os-utils')
 
 // Set env
 process.env.NODE_ENV = 'development'
@@ -14,11 +13,12 @@ let mainWindow
 function createMainWindow() {
 	mainWindow = new BrowserWindow({
 		title: 'SysTop',
-		width: isDev ? 800 : 355,
+		width: isDev ? 700 : 355,
 		height: 600,
 		icon: './assets/icons/icon.png',
 		resizable: isDev ? true : false,
 		backgroundColor: 'white',
+		//this lets us use node modules like CPU and such
 		webPreferences: {
 			nodeIntegration: true,
 		},
