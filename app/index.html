@@ -65,6 +65,7 @@
 		<script src="js/monitor.js"></script>
 		<script>
 			const settingsForm = document.getElementById('settings-form')
+			const nav = document.getElementById('nav')
 
 			//get (default) settings
 			ipcRenderer.on('settings:get', (e, settings) => {
@@ -97,6 +98,11 @@
 				setTimeout(() => alert.classList.add('hide'), 2000)
 
 			}
+
+			//toggle nav
+			ipcRenderer.on('nav:toggle', () => {
+				nav.classList.toggle('hide')
+			})
 		</script>
 	</body>
 </html>
