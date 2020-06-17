@@ -1,6 +1,7 @@
-const { app, BrowserWindow, Menu } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, Tray } = require('electron')
 const log = require('electron-log')
-const os = require('os')
+const path = require('path')
+const Store = require('./Store')
 
 // Set env
 process.env.NODE_ENV = 'development'
@@ -9,6 +10,19 @@ const isDev = process.env.NODE_ENV !== 'production' ? true : false
 const isMac = process.platform === 'darwin' ? true : false
 
 let mainWindow
+let tray
+
+//init store and defaults
+const store = new Store({
+	//this will be the file name + .json
+	configName: 'user-settings',
+	defaults: {
+		settings: {
+			cpuOverload: 80,
+			alertFreq: 5,
+		},
+	},
+})
 
 function createMainWindow() {
 	mainWindow = new BrowserWindow({
@@ -22,6 +36,8 @@ function createMainWindow() {
 		webPreferences: {
 			nodeIntegration: true,
 		},
+		show: false,
+		opacity: 0.9,
 	})
 
 	if (isDev) {
@@ -34,8 +50,25 @@ function createMainWindow() {
 app.on('ready', () => {
 	createMainWindow()
 
+	//fires when dom is ready!
+	mainWindow.webContents.on('dom-ready', () => {
+		mainWindow.webContents.send('settings:get', store.get('settings'))
+	})
+
 	const mainMenu = Menu.buildFromTemplate(menu)
 	Menu.setApplicationMenu(mainMenu)
+
+	const icon = path.join(__dirname, 'assets', 'icons', 'tray_icon.png')
+
+	//create tray instance
+	tray = new Tray(icon)
+	tray.on('click', () => {
+		if (mainWindow.isVisible()) {
+			mainWindow.hide()
+		} else {
+			mainWindow.show()
+		}
+	})
 })
 
 const menu = [
@@ -57,6 +90,12 @@ const menu = [
 		  ]
 		: []),
 ]
+
+//set new settings
+ipcMain.on('settings:set', (e, value) => {
+	store.set('settings', value)
+	mainWindow.webContents.send('settings:get', store.get('settings'))
+})
 
 app.on('window-all-closed', () => {
 	if (!isMac) {

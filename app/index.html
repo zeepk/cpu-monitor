@@ -63,5 +63,40 @@
 
 		<script src="js/tabs.js"></script>
 		<script src="js/monitor.js"></script>
+		<script>
+			const settingsForm = document.getElementById('settings-form')
+
+			//get (default) settings
+			ipcRenderer.on('settings:get', (e, settings) => {
+				document.getElementById('cpu-overload').value = settings.cpuOverload
+				document.getElementById('alert-frequency').value = settings.alertFreq
+			})
+
+			//submit new settings
+			settingsForm.addEventListener('submit', e => {
+				e.preventDefault()
+				const cpuOverload = document.getElementById('cpu-overload').value
+				const alertFreq = document.getElementById('alert-frequency').value
+
+				//send new settings to main process
+				ipcRenderer.send('settings:set', {
+					cpuOverload,
+					alertFreq
+				})
+
+				showAlert('Settings saved')
+			})
+
+			//show alert for settings
+			function showAlert(msg) {
+				const alert = document.getElementById('alert')
+				alert.classList.remove('hide')
+				alert.classList.add('alert')
+				alert.innerText = msg
+
+				setTimeout(() => alert.classList.add('hide'), 2000)
+
+			}
+		</script>
 	</body>
 </html>

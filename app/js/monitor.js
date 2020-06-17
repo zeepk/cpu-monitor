@@ -1,10 +1,18 @@
 const path = require('path')
+const { ipcRenderer } = require('electron')
 const osu = require('node-os-utils')
 const cpu = osu.cpu
 const mem = osu.mem
 const os = osu.os
 
-let cpuOverload = 20
+let cpuOverload
+let alertFreq
+
+//get settings and values
+ipcRenderer.on('settings:get', (e, settings) => {
+	cpuOverload = +settings.cpuOverload
+	alertFreq = +settings.alertFreq
+})
 
 //run every x seconds
 setInterval(() => {
@@ -20,6 +28,18 @@ setInterval(() => {
 			document.getElementById('cpu-progress').style.background = 'red'
 		} else {
 			document.getElementById('cpu-progress').style.background = '#30c88b'
+		}
+
+		//check overload
+		if (info >= cpuOverload && runNotify(alertFreq)) {
+			notify({
+				title: 'CPU Overload',
+				body: `CPU is over ${cpuOverload}%`,
+				icon: path.join(__dirname, 'img', 'icon.png'),
+			})
+
+			//store timestamp of current datetime
+			localStorage.setItem('lastNotify', +new Date())
 		}
 	})
 
@@ -56,4 +76,28 @@ function secondsFormat(seconds) {
 	const m = Math.floor((seconds % 3600) / 60)
 	const s = Math.floor(seconds % 60)
 	return `${d}d, ${h}h, ${m}m, ${s}s`
+}
+
+//send notification
+function notify(options) {
+	new Notification(options.title, options)
+}
+
+//check how much time has passed since last notif
+function runNotify(freq) {
+	if (!localStorage.getItem('lastNotify')) {
+		//create initial timestamp if not exist
+		localStorage.setItem('lastNotify', +new Date())
+		return true
+	}
+	const notifyTime = new Date(parseInt(localStorage.getItem('lastNotify')))
+	const now = new Date()
+	const diffTime = Math.abs(now - notifyTime)
+	const minutesPassed = Math.ceil(diffTime / (1000 * 60))
+
+	if (minutesPassed > freq) {
+		return true
+	} else {
+		return false
+	}
 }
